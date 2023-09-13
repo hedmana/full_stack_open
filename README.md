@@ -1,3 +1,3 @@
 # Full Stack open 2023
 
-Currently taking the full stack open course provided Helisnki University https://fullstackopen.com/en/.
+Currently taking the Full Stack open course provided Helisnki University https://fullstackopen.com/en/.
