@@ -92,7 +92,7 @@ sequenceDiagram
 
 ## Assignment 0.6
 
-**Situation:** ser creates a new note using the single-page version of the app.
+**Situation:** user creates a new note using the single-page version of the app.
 
 ```mermaid
 sequenceDiagram
