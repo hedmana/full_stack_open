@@ -1,3 +1,3 @@
-const SubmitButton = ({text}) => <button type="submit">text</button>
+const SubmitButton = ({text}) => <button type="submit">{text}</button>
 
 export default SubmitButton
