@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 
 import Form from "./components/Form";
 import Contacts from "./components/Contacts";
-import axios from "axios";
 import service from "./services/persons";
+import Notification from "./components/Notification";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -11,6 +11,8 @@ const App = () => {
   const [newFilter, setNewFilter] = useState("");
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
+  const [notificationText, setNotificationText] = useState(null);
+  const [notificationClassName, setNotificationClassName] = useState(null);
 
   useEffect(() => {
     service.getAll().then((response) => {
@@ -37,13 +39,27 @@ const App = () => {
           number: newNumber,
           id: id,
         };
-        service.update(id, personObject).then((returnedPerson) => {
-          setPersons(
-            persons.map((person) =>
-              person.id !== id ? person : returnedPerson
-            )
-          );
-        });
+        service
+          .update(id, personObject)
+          .then((returnedPerson) => {
+            setPersons(
+              persons.map((person) =>
+                person.id !== id ? person : returnedPerson
+              )
+            );
+          })
+          .catch((error) => {
+            setNotificationText(
+              `${newName} was already removed from the server`
+            );
+            setNotificationClassName("error");
+            service.getAll().then((response) => {
+              setPersons(response.data);
+            });
+            setTimeout(() => {
+              setNotificationText(null);
+            }, 5000);
+          });
       }
     } else {
       for (let id = 1; id <= persons.length + 1; id++) {
@@ -55,6 +71,11 @@ const App = () => {
           };
           service.create(personObject).then((response) => {
             setPersons(persons.concat(response.data));
+            setNotificationText(`Added ${newName}`);
+            setNotificationClassName("added");
+            setTimeout(() => {
+              setNotificationText(null);
+            }, 5000);
           });
         }
       }
@@ -66,11 +87,25 @@ const App = () => {
 
   const deletePerson = (person) => {
     if (window.confirm(`Delete ${person.name}`)) {
-      service.remove(person.id).then((response) => {
-        service.getAll().then((response) => {
-          setPersons(response.data);
+      service
+        .remove(person.id)
+        .then((response) => {
+          service.getAll().then((response) => {
+            setPersons(response.data);
+          });
+        })
+        .catch((error) => {
+          setNotificationText(
+            `${person.name} was already removed from the server`
+          );
+          setNotificationClassName("error");
+          service.getAll().then((response) => {
+            setPersons(response.data);
+          });
+          setTimeout(() => {
+            setNotificationText(null);
+          }, 5000);
         });
-      });
     }
   };
 
@@ -88,6 +123,10 @@ const App = () => {
 
   return (
     <div>
+      <Notification
+        message={notificationText}
+        className={notificationClassName}
+      />
       <Form
         addPerson={addPerson}
         newFilter={newFilter}
