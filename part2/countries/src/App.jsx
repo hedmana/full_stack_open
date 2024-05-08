@@ -49,7 +49,7 @@ function App() {
 
   const showCountryDetails = (country) => {
     setCountriesToDisplay([country]);
-    setNewFilter(country.capital);
+    setNewFilter(country.name.common);
     setWeatherData(country.capital);
   }
 
