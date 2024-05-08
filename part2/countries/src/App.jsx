@@ -1,20 +1,66 @@
-import { useState } from "react";
-import Countries from "./components/Countries"
+import { useState, useEffect } from "react";
+import { default as countriesAPI } from "./api/countries";
+import SearchFilter from "./components/SearchFilter";
+import DisplayCountries from "./components/DisplayCountries";
 
 function App() {
-  const [newFilter, setNewFilter] = useState("");
+  const [filter, setNewFilter] = useState("");
+  const [countries, setCountries] = useState(null);
+  const [countriesToDisplay, setCountriesToDisplay] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [currentWeather, setCurrentWeather] = useState(null);
+
+  useEffect(() => {
+    countriesAPI
+      .getAll()
+      .then((response) => {
+        setCountriesToDisplay(
+          response.data.map((country) => country.name.common)
+        );
+        setCountries(response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (weatherData) {
+      countriesAPI
+        .getWeatherData(weatherData)
+        .then((response) => {
+          setCurrentWeather(response.data.current)
+        });
+    }
+  }, [weatherData]);
 
   const handleFilterChange = (event) => {
+    const filteredCountries = countries.filter((country) =>
+      country.name.common
+        .toLowerCase()
+        .includes(event.target.value.toLowerCase())
+    );
+    if (filteredCountries.length === 1 && filteredCountries[0].capital !== weatherData) {
+      setWeatherData(filteredCountries[0].capital);
+    }
     setNewFilter(event.target.value);
+    setCountriesToDisplay(filteredCountries);
   };
 
+  const showCountryDetails = (country) => {
+    setCountriesToDisplay([country]);
+    setNewFilter(country.capital);
+    setWeatherData(country.capital);
+  }
+
   return (
-    <div>
-      <Countries 
-        newFilter={newFilter}
+    <>
+      <SearchFilter
+        newFilter={filter}
         handleFilterChange={handleFilterChange}
       />
-    </div>
+      <DisplayCountries countriesToDisplay={countriesToDisplay} showCountryDetails={showCountryDetails} weatherData={currentWeather} />
+    </>
   );
 }
 
