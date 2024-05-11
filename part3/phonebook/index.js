@@ -32,6 +32,17 @@ app.get("/api/phonebook", (request, response) => {
   response.json(phonebook);
 });
 
+app.get('/api/phonebook/:id', (request, response) => {
+  const id = Number(request.params.id)
+  const contact = phonebook.find(note => note.id === id)
+  
+  if (contact) {
+    response.json(contact)
+  } else {
+    response.status(404).end()
+  }
+})
+
 app.get("/info", (request, response) => {
   const date = new Date();
   response.send(
