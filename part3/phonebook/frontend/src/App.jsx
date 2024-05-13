@@ -7,7 +7,6 @@ import Notification from "./components/Notification";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
-
   const [newFilter, setNewFilter] = useState("");
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
@@ -17,6 +16,8 @@ const App = () => {
   useEffect(() => {
     service.getAll().then((response) => {
       setPersons(response.data);
+    }).catch((error) => {
+      console.log(error);
     });
   }, []);
 
@@ -33,52 +34,61 @@ const App = () => {
           `${newName} is already added to phonebook, do you want to update the number?`
         )
       ) {
-        let id = persons.find((element) => element.name === newName).id;
+        const personToUpdate = persons.find((per) => per.name === newName);
         const personObject = {
           name: newName,
           number: newNumber,
-          id: id,
         };
         service
-          .update(id, personObject)
-          .then((returnedPerson) => {
-            setPersons(
-              persons.map((person) =>
-                person.id !== id ? person : returnedPerson
-              )
-            );
+          .update(personToUpdate.id, personObject)
+          .then((response) => {
+            persons.map((person) => {
+              if (person.id === response.data.id) {
+                return response.data;
+              } else {
+                return person;
+              }
+            });
           })
           .catch((error) => {
-            setNotificationText(
-              `${newName} was already removed from the server`
-            );
+            console.log(error.response.data.error);
+            setNotificationText(error.response.data.error);
             setNotificationClassName("error");
-            service.getAll().then((response) => {
-              setPersons(response.data);
-            });
+            ("error");
             setTimeout(() => {
-              setNotificationText(null);
+              setNotificationText("");
+              setNotificationClassName("");
             }, 5000);
           });
+        service.getAll().then((response) => {
+          setPersons(response.data);
+        });
       }
     } else {
-      for (let id = 1; id <= persons.length + 1; id++) {
-        if (!persons.map((person) => person.id).includes(id)) {
-          const personObject = {
-            name: newName,
-            number: newNumber,
-            id: id,
-          };
-          service.create(personObject).then((response) => {
-            setPersons(persons.concat(response.data));
-            setNotificationText(`Added ${newName}`);
-            setNotificationClassName("added");
-            setTimeout(() => {
-              setNotificationText(null);
-            }, 5000);
-          });
-        }
-      }
+      const personObject = {
+        name: newName,
+        number: newNumber,
+      };
+      service
+        .create(personObject)
+        .then((response) => {
+          setPersons(persons.concat(response.data));
+          setNotificationText(`Added ${newName}`);
+          setNotificationClassName("added");
+          setTimeout(() => {
+            setNotificationText(null);
+          }, 5000);
+        })
+        .catch((error) => {
+          console.log(error.response.data.error);
+          setNotificationText(error.response.data.error);
+          setNotificationClassName("error");
+          ("error");
+          setTimeout(() => {
+            setNotificationText("");
+            setNotificationClassName("");
+          }, 5000);
+        });
     }
     setNewFilter("");
     setNewNumber("");
