@@ -1,0 +1,164 @@
+const { test, after, describe, beforeEach } = require("node:test");
+const mongoose = require("mongoose");
+const supertest = require("supertest");
+const assert = require("node:assert");
+const app = require("../app");
+const Blog = require("../models/blog");
+const helper = require("./test_helper");
+const blog = require("../models/blog");
+
+const api = supertest(app);
+
+beforeEach(async () => {
+  await Blog.deleteMany({});
+
+  const blogObjects = helper.initialBlogs.map((blog) => new Blog(blog));
+  const promiseArray = blogObjects.map((blog) => blog.save());
+  await Promise.all(promiseArray);
+});
+
+describe("Formatting", () => {
+  test("blogs are returned as json", async () => {
+    await api
+      .get("/api/blogs")
+      .expect(200)
+      .expect("Content-Type", /application\/json/);
+  });
+
+  test("the correct amount of blogs are returned", async () => {
+    const blogsAtEnd = await helper.blogsInDb();
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length);
+  });
+
+  test("the unique identifier property of blog posts is named id", async () => {
+    blogsAtEnd = await helper.blogsInDb();
+    blogsAtEnd.forEach((blog) => {
+      assert.ok(blog.id);
+      assert.strictEqual(blog._id, undefined);
+    });
+  });
+});
+
+describe("Adding and deleting blogs", () => {
+  test("a valid blog can be added ", async () => {
+    const newBlog = {
+      _id: "5a422bc61b54a676234d17fo",
+      title: "Test Blog",
+      author: "John Doe",
+      url: "https://testblog.com",
+      likes: 5,
+    };
+
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const blogsAtEnd = await helper.blogsInDb();
+    const addedBlog = blogsAtEnd.find((blog) => blog.title === newBlog.title);
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length + 1);
+    assert.strictEqual(addedBlog.title, newBlog.title);
+    assert.strictEqual(addedBlog.author, newBlog.author);
+    assert.strictEqual(addedBlog.url, newBlog.url);
+    assert.strictEqual(addedBlog.likes, newBlog.likes);
+  });
+
+  test("if the likes property is missing, it will default to 0", async () => {
+    const newBlog = {
+      _id: "5a422bc61b54a676234d17gu",
+      title: "Test Blog 2",
+      author: "John Doe",
+      url: "https://testblog2.com",
+    };
+
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const blogsAtEnd = await helper.blogsInDb();
+    const addedBlog = blogsAtEnd.find((blog) => blog.title === newBlog.title);
+    assert.strictEqual(addedBlog.likes, 0);
+  });
+
+  test("if the title and url properties are missing, the backend responds with a 400 Bad Request", async () => {
+    const newBlog1 = {
+      _id: "5a422bc61b54a676234d17fo",
+      author: "John Doe",
+      url: "https://testblog.com",
+      likes: 5,
+    };
+
+    const newBlog2 = {
+      _id: "5a422bc61b54a676234d17fo",
+      title: "Test Blog",
+      author: "John Doe",
+      likes: 5,
+    };
+
+    const newBlog3 = {
+      _id: "5a422bc61b54a676234d17fo",
+      author: "John Doe",
+      likes: 5,
+    };
+
+    await api.post("/api/blogs").send(newBlog1).expect(400);
+    await api.post("/api/blogs").send(newBlog2).expect(400);
+    await api.post("/api/blogs").send(newBlog3).expect(400);
+  });
+
+  test("deleting a blog post", async () => {
+    const blogsAtStart = await helper.blogsInDb();
+    const blogToDelete = blogsAtStart[0];
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+
+    const blogsAtEnd = await helper.blogsInDb();
+    assert.strictEqual(blogsAtEnd.length, blogsAtStart.length - 1);
+
+    const titles = blogsAtEnd.map((blog) => blog.title);
+    assert.notStrictEqual(titles, blogToDelete.title);
+  });
+});
+
+describe("Updating a blog post", () => {
+  test("updating the likes of a blog post", async () => {
+    const blogsAtStart = await helper.blogsInDb();
+    const blogToUpdate = blogsAtStart[0];
+    const updatedBlog = { ...blogToUpdate, likes: blogToUpdate.likes + 1 };
+
+    await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updatedBlog)
+      .expect(200);
+
+    const blogsAtEnd = await helper.blogsInDb();
+    const updatedBlogAtEnd = blogsAtEnd.find(
+      (blog) => blog.id === blogToUpdate.id
+    );
+    assert.strictEqual(updatedBlogAtEnd.likes, updatedBlog.likes);
+  });
+
+  test("updating a blog post without likes property defaults to 0", async () => {
+    const blogsAtStart = await helper.blogsInDb();
+    const blogToUpdate = blogsAtStart[0];
+    const updatedBlog = { ...blogToUpdate, likes: undefined };
+
+    await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updatedBlog)
+      .expect(200);
+
+    const blogsAtEnd = await helper.blogsInDb();
+    const updatedBlogAtEnd = blogsAtEnd.find(
+      (blog) => blog.id === blogToUpdate.id
+    );
+    assert.strictEqual(updatedBlogAtEnd.likes, 0);
+  });
+});
+
+after(async () => {
+  await mongoose.connection.close();
+});
