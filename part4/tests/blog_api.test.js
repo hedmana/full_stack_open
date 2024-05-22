@@ -51,8 +51,7 @@ describe("Formatting", () => {
 
 describe("Adding and deleting blogs", () => {
   test("a valid blog can be added ", async () => {
-    users = await helper.usersInDb();
-    user = users[0];
+    const currentToken = await helper.getToken(api);
 
     const newBlog = {
       _id: "5a422bc61b54a676234d17fo",
@@ -60,11 +59,11 @@ describe("Adding and deleting blogs", () => {
       author: "John Doe",
       url: "https://testblog.com",
       likes: 5,
-      userId: user.id,
     };
 
     await api
       .post("/api/blogs")
+      .set({ Authorization: `Bearer ${currentToken}` })
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
@@ -77,19 +76,18 @@ describe("Adding and deleting blogs", () => {
   });
 
   test("if the likes property is missing, it will default to 0", async () => {
-    users = await helper.usersInDb();
-    user = users[0];
+    const currentToken = await helper.getToken(api);
 
     const newBlog = {
       _id: "5a422bc61b54a676234d17gu",
       title: "Test Blog 2",
       author: "John Doe",
       url: "https://testblog2.com",
-      userId: user.id,
     };
 
     await api
       .post("/api/blogs")
+      .set({ Authorization: `Bearer ${currentToken}` })
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
@@ -100,9 +98,6 @@ describe("Adding and deleting blogs", () => {
   });
 
   test("if the title and url properties are missing, the backend responds with a 400 Bad Request", async () => {
-    users = await helper.usersInDb();
-    user = users[0];
-
     const newBlog1 = {
       _id: "5a422bc61b54a676234d17fo",
       author: "John Doe",
@@ -129,16 +124,46 @@ describe("Adding and deleting blogs", () => {
   });
 
   test("deleting a blog post", async () => {
+    const currentToken = await helper.getToken(api);
     const blogsAtStart = await helper.blogsInDb();
-    const blogToDelete = blogsAtStart[0];
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+    const newBlog = {
+      title: "Test Blog",
+      author: "John Doe",
+      url: "https://testblog.com",
+      likes: 5,
+    };
+    
+    await api
+    .post("/api/blogs")
+    .set({ Authorization: `Bearer ${currentToken}` })
+    .send(newBlog)
+    .expect(201)
+    .expect("Content-Type", /application\/json/);
+
+    const blogToDelete = await Blog.findOne({ title
+      : newBlog.title });
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set({ Authorization: `Bearer ${currentToken}` })
+      .expect(204);
 
     const blogsAtEnd = await helper.blogsInDb();
-    assert.strictEqual(blogsAtEnd.length, blogsAtStart.length - 1);
+    assert.strictEqual(blogsAtEnd.length, blogsAtStart.length);
+  });
 
-    const titles = blogsAtEnd.map((blog) => blog.title);
-    assert.notStrictEqual(titles, blogToDelete.title);
+  test("Adding a blog post without token", async () => {
+    const newBlog = {
+      title: "Test Blog",
+      author: "John Doe",
+      url: "https://testblog.com",
+      likes: 5,
+    };
+
+    await api.post("/api/blogs").set(
+      { Authorization: `Bearer ` }
+    ).send(newBlog).expect(401);
   });
 });
 
@@ -261,7 +286,11 @@ describe("when there is initially one user in db", () => {
       .expect(400)
       .expect("Content-Type", /application\/json/);
 
-    assert(result.body.error.includes("User validation failed: username: Path `username` (`te`) is shorter than the minimum allowed length (3)."));
+    assert(
+      result.body.error.includes(
+        "User validation failed: username: Path `username` (`te`) is shorter than the minimum allowed length (3)."
+      )
+    );
     const usersAtEnd = await User.find({});
     assert.strictEqual(usersAtEnd.length, usersAtStart.length);
   });

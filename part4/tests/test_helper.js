@@ -58,9 +58,17 @@ const usersInDb = async () => {
   return users.map((u) => u.toJSON());
 };
 
+const getToken = async (api) => {
+  const response = await api
+    .post("/api/login")
+    .send({ username: "root", password: "sekret" });
+  return response.body.token;
+}
+
 module.exports = {
   initialBlogs,
   nonExistingId,
   blogsInDb,
   usersInDb,
+  getToken
 };
