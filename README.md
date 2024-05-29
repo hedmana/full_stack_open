@@ -1,3 +1,3 @@
-# Full Stack open 2023
+# Full Stack open 2024
 
-Currently taking the Full Stack open course provided Helisnki University https://fullstackopen.com/en/.
+Full-stack development course provided Helsinki University: https://fullstackopen.com/en/
