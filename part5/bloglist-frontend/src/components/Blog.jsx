@@ -49,7 +49,7 @@ const Blog = ({ blog, addLike, deleteBlog, user }) => {
       <div className="blogInfoExpanded" style={show}>
         <div><a href="url">{blog.url}</a></div>
         <div>
-          {blog.likes}
+          {"likes: " + blog.likes}
           <button id={blog.title + "-likeButton"} onClick={handleAddLike}>
             like
           </button>

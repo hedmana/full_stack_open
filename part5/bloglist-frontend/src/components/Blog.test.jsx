@@ -1,9 +1,8 @@
-import React from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Blog from "./Blog";
-import AddBlog from './AddBlogForm'
+import AddBlog from "./AddBlogForm";
 
 test("Displaying title and author but not likes and url", () => {
   const blog = {
@@ -90,7 +89,7 @@ test("Props component called twice when like button is clicked twice", async () 
   let mockLikeBlog = vi.fn();
   let mockDeleteBlog = vi.fn();
 
-  const cont = render(
+  render(
     <Blog
       blog={blog}
       addLike={mockLikeBlog}
@@ -103,21 +102,21 @@ test("Props component called twice when like button is clicked twice", async () 
   expect(mockLikeBlog.mock.calls).toHaveLength(1);
 });
 
-test('submit button calls event handler correctly', async () => {
-    const mockAddBlogHandler = vi.fn()
-    render(<AddBlog addBlog={mockAddBlogHandler} />).container
-    const user = userEvent.setup()
-    const button = screen.getByText('create')
-    const title = screen.getByTestId('title')
-    const author = screen.getByTestId('author')
-    const url = screen.getByTestId('url')
-    await user.type(title, 'testing title')
-    await user.type(author, 'testing author')
-    await user.type(url, 'testing url')
-    await user.click(button)
-    const callContent = mockAddBlogHandler.mock.calls[0]
-    expect(mockAddBlogHandler.mock.calls).toHaveLength(1)
-    expect(callContent).toContain('testing title')
-    expect(callContent).toContain('testing author')
-    expect(callContent).toContain('testing url')
-  })
+test("submit button calls event handler correctly", async () => {
+  const mockAddBlogHandler = vi.fn();
+  render(<AddBlog addBlog={mockAddBlogHandler} />).container;
+  const user = userEvent.setup();
+  const button = screen.getByText("create");
+  const title = screen.getByTestId("title");
+  const author = screen.getByTestId("author");
+  const url = screen.getByTestId("url");
+  await user.type(title, "testing title");
+  await user.type(author, "testing author");
+  await user.type(url, "testing url");
+  await user.click(button);
+  const callContent = mockAddBlogHandler.mock.calls[0];
+  expect(mockAddBlogHandler.mock.calls).toHaveLength(1);
+  expect(callContent).toContain("testing title");
+  expect(callContent).toContain("testing author");
+  expect(callContent).toContain("testing url");
+});
