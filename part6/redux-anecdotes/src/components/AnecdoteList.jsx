@@ -14,9 +14,9 @@ const AnecdoteList = () => {
     <div>
       {filteredAnecdotes.map((anecdote) => (
         <div key={anecdote.id}>
-          <div>{anecdote.content}</div>
+          {anecdote.content}
           <div>
-            has {anecdote.votes}
+            has {anecdote.votes} votes 
             <button
               onClick={() => {
                 dispatch(voteFor(anecdote.id));
